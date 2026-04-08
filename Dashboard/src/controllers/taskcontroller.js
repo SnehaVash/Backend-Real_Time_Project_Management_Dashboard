@@ -1,22 +1,6 @@
-import fs from "fs";
+import Task from "../models/Task.js";
 
-const filePath = "task.json";
-
-
-function readTasks() {
-  if (!fs.existsSync(filePath)) return [];
-  const data = fs.readFileSync(filePath, "utf-8");
-  return JSON.parse(data || "[]");
-}
-
-
-function writeTasks(data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-}
-
-
-
-export function createTask(req, res) {
+export async function createTask(req, res) {
   try {
     const { title, status } = req.body;
 
@@ -24,16 +8,10 @@ export function createTask(req, res) {
       return res.status(400).send("All fields are required");
     }
 
-    const tasks = readTasks();
-
-    const newTask = {
-      id: Date.now(),
+    const newTask = await Task.create({
       title,
-      status   
-    };
-
-    tasks.push(newTask);
-    writeTasks(tasks);
+      status
+    });
 
     res.status(201).json(newTask);
 
@@ -44,9 +22,9 @@ export function createTask(req, res) {
 }
 
 
-export function getTasks(req, res) {
+export async function getTasks(req, res) {
   try {
-    const tasks = readTasks();
+    const tasks = await Task.find();
     res.json(tasks);
 
   } catch (error) {
@@ -56,11 +34,11 @@ export function getTasks(req, res) {
 }
 
 
-export function getTaskById(req, res) {
+export async function getTaskById(req, res) {
   try {
     const { id } = req.params;
-    const tasks = readTasks();
-    const task = tasks.find(t => t.id == id);
+
+    const task = await Task.findById(id);
 
     if (!task) {
       return res.status(404).send("Task not found");
@@ -75,26 +53,23 @@ export function getTaskById(req, res) {
 }
 
 
-
-export function updateTask(req, res) {
+export async function updateTask(req, res) {
   try {
     const { id } = req.params;
     const { title, status } = req.body;
 
-    let tasks = readTasks();
+    const task = await Task.findById(id);
 
-    const index = tasks.findIndex(t => t.id == id);
-
-    if (index === -1) {
+    if (!task) {
       return res.status(404).send("Task not found");
     }
 
-    if (title) tasks[index].title = title;
-    if (status) tasks[index].status = status;
+    if (title) task.title = title;
+    if (status) task.status = status;
 
-    writeTasks(tasks);
+    await task.save();
 
-    res.json(tasks[index]);
+    res.json(task);
 
   } catch (error) {
     console.error(error);
@@ -103,19 +78,15 @@ export function updateTask(req, res) {
 }
 
 
-export function deleteTask(req, res) {
+export async function deleteTask(req, res) {
   try {
     const { id } = req.params;
 
-    let tasks = readTasks();
+    const task = await Task.findByIdAndDelete(id);
 
-    const newTasks = tasks.filter(t => t.id != id);
-
-    if (tasks.length === newTasks.length) {
+    if (!task) {
       return res.status(404).send("Task not found");
     }
-
-    writeTasks(newTasks);
 
     res.send("Task deleted successfully");
 

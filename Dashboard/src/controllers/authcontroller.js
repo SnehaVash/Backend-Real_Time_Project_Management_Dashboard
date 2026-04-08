@@ -1,10 +1,8 @@
-import fs from "fs";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-const filePath = "user.json";
-
-export function register(req, res) {
+export async function register(req, res) {
   try {
     const { name, email, password } = req.body;
 
@@ -16,33 +14,28 @@ export function register(req, res) {
       return res.status(400).send("Email and password are required");
     }
 
-    let users = [];
+    
+    const existingUser = await User.findOne({ email });
 
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, "utf-8");
-      users = JSON.parse(data);
-    }
-
-    const existingUser = users.find(u => u.email === email);
     if (existingUser) {
       return res.status(409).send("User already exists");
     }
 
-    const salt = bcrypt.genSaltSync(10);
-    const hashedPassword = bcrypt.hashSync(password, salt);
+  
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = {
-      id: Date.now(),
+    
+    const newUser = await User.create({
       name,
       email,
       password: hashedPassword
-    };
+    });
 
-    users.push(newUser);
-
-    fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
-
-    return res.status(201).send("User registered successfully");
+    return res.status(201).json({
+      message: "User registered successfully",
+      user: newUser
+    });
 
   } catch (error) {
     console.error(error);
@@ -51,7 +44,7 @@ export function register(req, res) {
 }
 
 
-export function login(req, res) {
+export async function login(req, res) {
   try {
     const { email, password } = req.body;
 
@@ -59,28 +52,25 @@ export function login(req, res) {
       return res.status(400).send("Email and password are required");
     }
 
-    let users = [];
-
-    if (fs.existsSync(filePath)) {
-      const data = fs.readFileSync(filePath, "utf-8");
-      users = JSON.parse(data);
-    }
-
-    const user = users.find(u => u.email === email);
+    // find user in MongoDB
+    const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(400).send("User not found");
     }
 
-    const isMatch = bcrypt.compareSync(password, user.password);
+  
+    const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
       return res.status(400).send("Wrong password");
     }
 
+    
     const token = jwt.sign(
-      { id: user.id },
-      "secretkey"
+      { id: user._id },
+      "secretkey",
+      { expiresIn: "1d" }
     );
 
     return res.json({ token });

@@ -1,89 +1,105 @@
-import fs from "fs";
-
-const filePath = "project.json";
-
-function getData() {
-  if (!fs.existsSync(filePath)) return [];
-  return JSON.parse(fs.readFileSync(filePath));
-}
-
-function saveData(data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-}
+import Project from "../models/Project.js";
 
 
-export function createProject(req, res) {
-  const { title, description } = req.body;
+export async function createProject(req, res) {
+  try {
+    const { title, description } = req.body;
 
-  if (!title || !description) {
-    return res.send("Please fill all fields");
+    if (!title || !description) {
+      return res.send("Please fill all fields");
+    }
+
+    const newProject = await Project.create({
+      title,
+      description
+    });
+
+    res.status(201).json({
+      message: "Project created",
+      project: newProject
+    });
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
   }
-
-  const projects = getData();
-
-  const newProject = {
-    id: Date.now(),
-    title,
-    description
-  };
-
-  projects.push(newProject);
-  saveData(projects);
-
-  res.send("Project created");
 }
 
 
-export function getProjects(req, res) {
-  const projects = getData();
-  res.json(projects);
-}
 
+export async function getProjects(req, res) {
+  try {
+    const projects = await Project.find();
+    res.json(projects);
 
-export function getProject(req, res) {
-  const { id } = req.params;
-
-  const projects = getData();
-
-  const project = projects.find(p => p.id == id);
-
-  if (!project) {
-    return res.send("Project not found");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
   }
-
-  res.json(project);
 }
 
 
-export function updateProject(req, res) {
-  const { id } = req.params;
-  const { title, description } = req.body;
 
-  const projects = getData();
+export async function getProject(req, res) {
+  try {
+    const { id } = req.params;
 
-  const project = projects.find(p => p.id == id);
+    const project = await Project.findById(id);
 
-  if (!project) {
-    return res.send("Project not found");
+    if (!project) {
+      return res.send("Project not found");
+    }
+
+    res.json(project);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
   }
-
-  if (title) project.title = title;
-  if (description) project.description = description;
-
-  saveData(projects);
-
-  res.send("Project updated");
 }
 
 
-export function deleteProject(req, res) {
-  const { id } = req.params;
 
-  let projects = getData();
+export async function updateProject(req, res) {
+  try {
+    const { id } = req.params;
+    const { title, description } = req.body;
 
-  const newProjects = projects.filter(p => p.id != id);
+    const project = await Project.findById(id);
 
-  saveData(newProjects);
+    if (!project) {
+      return res.send("Project not found");
+    }
 
-  res.send("Project deleted");
+    if (title) project.title = title;
+    if (description) project.description = description;
+
+    await project.save();
+
+    res.send("Project updated");
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
+}
+
+
+
+export async function deleteProject(req, res) {
+  try {
+    const { id } = req.params;
+
+    const project = await Project.findByIdAndDelete(id);
+
+    if (!project) {
+      return res.send("Project not found");
+    }
+
+    res.send("Project deleted");
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Server error");
+  }
 }
