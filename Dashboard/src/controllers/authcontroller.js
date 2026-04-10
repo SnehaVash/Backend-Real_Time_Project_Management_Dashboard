@@ -4,7 +4,7 @@ import User from "../models/User.js";
 
 export async function register(req, res) {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, role } = req.body;
 
     if (!name) {
       return res.status(400).send("Name is required");
@@ -14,11 +14,26 @@ export async function register(req, res) {
       return res.status(400).send("Email and password are required");
     }
 
+    if (password.length < 6) {
+        return res.status(400).send("Password must be at least 6 characters!");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (!emailRegex.test(email)) {
+        return res.status(400).send("Invalid email format!");
+    }
     
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       return res.status(409).send("User already exists");
+    }
+
+    const allowedRoles = ["manager", "member"];
+
+    if (role && !allowedRoles.includes(role)){
+      return res.status(400).send("Invalid role!");
     }
 
   
@@ -29,12 +44,18 @@ export async function register(req, res) {
     const newUser = await User.create({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      role
     });
 
     return res.status(201).json({
       message: "User registered successfully",
-      user: newUser
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        role: newUser.role
+    }
     });
 
   } catch (error) {
@@ -52,7 +73,6 @@ export async function login(req, res) {
       return res.status(400).send("Email and password are required");
     }
 
-    // find user in MongoDB
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -66,14 +86,26 @@ export async function login(req, res) {
       return res.status(400).send("Wrong password");
     }
 
+    if (!user.isActive) {
+    return res.status(403).send("Account is deactivated!");
+    }
+
     
     const token = jwt.sign(
       { id: user._id },
-      "secretkey",
+      process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    return res.json({ token });
+    return res.json({ 
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+    }
+    });
 
   } catch (error) {
     console.error(error);
