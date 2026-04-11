@@ -1,5 +1,8 @@
 --TEST PLAN
-The test Plan which i have generated will throughly check each and every variable and data set of this project from End to End API formulation to Database storage.This test plan outlines the strategy, scope, and approach for testing the Real-Time Project Management Dashboard application. The purpose of this document is to ensure that all functionalities of the system operate correctly, reliably, and efficiently. The testing process will focus on verifying backend APIs, validating data handling, and ensuring smooth integration between frontend and backend components.
+The test Plan which i have generated will throughly check each and every variable and data set of this project from End to End API formulation to Database storage.
+This test plan outlines the strategy, scope, and approach for testing the Real-Time Project Management Dashboard application.
+The purpose of this document is to ensure that all functionalities of the system operate correctly, reliably, and efficiently. 
+The testing process will focus on verifying backend APIs, validating data handling, and ensuring smooth integration between frontend and backend components.
 The primary objective of testing is to:
 
 Verify that all APIs function as expected
