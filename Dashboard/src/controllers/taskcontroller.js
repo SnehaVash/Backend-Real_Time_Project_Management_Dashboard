@@ -1,97 +1,89 @@
-import Task from "../models/Task.js";
+import * as taskService from "../services/taskService.js";
+import { successResponse, errorResponse } from "../utils/helpers.js";
 
-export async function createTask(req, res) {
+export async function createTask(req, res, next) {
   try {
-    const { title, status } = req.body;
+    const { title, description, status, priority, projectId, assignedTo, dueDate } = req.body;
 
-    if (!title || !status) {
-      return res.status(400).send("All fields are required");
+    if (!title || !projectId) {
+      return res.status(400).json({ message: "Title and project are required!" });
     }
 
-    const newTask = await Task.create({
-      title,
-      status
+    const task = await taskService.createTask(
+      { title, description, status, priority, project: projectId, assignedTo, dueDate },
+      req.user._id
+    );
+
+    res.status(201).json({
+      message: "Task created successfully",
+      task
     });
 
-    res.status(201).json(newTask);
-
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }
 
-
-export async function getTasks(req, res) {
+export async function getTasks(req, res, next) {
   try {
-    const tasks = await Task.find();
+    const { projectId } = req.query;
+
+    if (!projectId) {
+      return res.status(400).json({ message: "projectId is required" });
+    }
+
+    const tasks = await taskService.getAllTasks(projectId);
     res.json(tasks);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }
 
-
-export async function getTaskById(req, res) {
+export async function getTaskById(req, res, next) {
   try {
-    const { id } = req.params;
-
-    const task = await Task.findById(id);
+    const task = await taskService.getTaskById(req.params.id);
 
     if (!task) {
-      return res.status(404).send("Task not found");
+      return res.status(404).json({ message: "Task not found" });
     }
 
     res.json(task);
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }
 
-
-export async function updateTask(req, res) {
+export async function updateTask(req, res, next) {
   try {
-    const { id } = req.params;
-    const { title, status } = req.body;
+    const { title, description, status, priority, assignedTo, dueDate } = req.body;
 
-    const task = await Task.findById(id);
+    const task = await taskService.updateTask(
+      req.params.id,
+      { title, description, status, priority, assignedTo, dueDate }
+    );
 
     if (!task) {
-      return res.status(404).send("Task not found");
+      return res.status(404).json({ message: "Task not found" });
     }
 
-    if (title) task.title = title;
-    if (status) task.status = status;
-
-    await task.save();
-
-    res.json(task);
+    res.json({
+      message: "Task updated successfully",
+      task
+    });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }
 
-
-export async function deleteTask(req, res) {
+export async function deleteTask(req, res, next) {
   try {
-    const { id } = req.params;
-
-    const task = await Task.findByIdAndDelete(id);
-
-    if (!task) {
-      return res.status(404).send("Task not found");
-    }
-
-    res.send("Task deleted successfully");
+    await taskService.deleteTask(req.params.id);
+    res.status(200).json({ message: "Task deleted successfully" });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }

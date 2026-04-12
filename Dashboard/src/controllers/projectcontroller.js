@@ -1,105 +1,136 @@
-import Project from "../models/Project.js";
+import * as projectService from "../services/projectService.js";
+import { successResponse, errorResponse } from "../utils/helpers.js";
 
-
-export async function createProject(req, res) {
+export async function createProject(req, res, next) {
   try {
-    const { title, description } = req.body;
+    const { title, description, priority, startDate, endDate } = req.body;
 
     if (!title || !description) {
-      return res.send("Please fill all fields");
+      return errorResponse(res, 400, "Please fill all fields");
     }
 
-    const newProject = await Project.create({
-      title,
-      description
-    });
+    const allowedPriorities = ["low", "medium", "high"];
+    if (priority && !allowedPriorities.includes(priority)) {
+      return errorResponse(res, 400, "Invalid priority value");
+    }
 
-    res.status(201).json({
-      message: "Project created",
-      project: newProject
-    });
+    const project = await projectService.createProject(
+      { title, description, priority, startDate, endDate },
+      req.user._id
+    );
+
+    return successResponse(res, 201, "Project created", { project });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }
 
-
-
-export async function getProjects(req, res) {
+export async function getProjects(req, res, next) {
   try {
-    const projects = await Project.find();
-    res.json(projects);
+    const projects = await projectService.getAllProjects(req.user._id);
+    return successResponse(res, 200, "Projects fetched", { projects });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }
 
-
-
-export async function getProject(req, res) {
+export async function getProject(req, res, next) {
   try {
-    const { id } = req.params;
-
-    const project = await Project.findById(id);
+    const project = await projectService.getProjectById(req.params.id);
 
     if (!project) {
-      return res.send("Project not found");
+      return errorResponse(res, 404, "Project not found");
     }
 
-    res.json(project);
+    const isMember = project.members.some(m => m._id.toString() === req.user._id.toString());
+    const isOwner = project.createdBy._id.toString() === req.user._id.toString();
+
+    if (!isMember && !isOwner) {
+      return errorResponse(res, 403, "Access denied");
+    }
+
+    return successResponse(res, 200, "Project fetched", { project });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }
 
-
-
-export async function updateProject(req, res) {
+export async function updateProject(req, res, next) {
   try {
-    const { id } = req.params;
-    const { title, description } = req.body;
+    const { title, description, priority, status, startDate, endDate } = req.body;
 
-    const project = await Project.findById(id);
-
-    if (!project) {
-      return res.send("Project not found");
+    const allowedPriorities = ["low", "medium", "high"];
+    if (priority && !allowedPriorities.includes(priority)) {
+      return errorResponse(res, 400, "Invalid priority value");
     }
 
-    if (title) project.title = title;
-    if (description) project.description = description;
+    const project = await projectService.updateProject(
+      req.params.id,
+      { title, description, priority, status, startDate, endDate }
+    );
 
-    await project.save();
+    if (!project) {
+      return errorResponse(res, 404, "Project not found");
+    }
 
-    res.send("Project updated");
+    return successResponse(res, 200, "Project updated", { project });
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
   }
 }
 
-
-
-export async function deleteProject(req, res) {
+export async function deleteProject(req, res, next) {
   try {
-    const { id } = req.params;
-
-    const project = await Project.findByIdAndDelete(id);
-
-    if (!project) {
-      return res.send("Project not found");
-    }
-
-    res.send("Project deleted");
+    await projectService.deleteProject(req.params.id);
+    return successResponse(res, 200, "Project and related tasks deleted");
 
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Server error");
+    next(error);
+  }
+}
+
+export async function addMember(req, res, next) {
+  try {
+    const { memberId } = req.body;
+
+    if (!memberId) {
+      return errorResponse(res, 400, "Member id is required");
+    }
+
+    const project = await projectService.addMember(req.params.id, memberId);
+
+    if (!project) {
+      return errorResponse(res, 404, "Project not found");
+    }
+
+    return successResponse(res, 200, "Member added successfully", { project });
+
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function removeMember(req, res, next) {
+  try {
+    const { memberId } = req.body;
+
+    if (!memberId) {
+      return errorResponse(res, 400, "Member id is required");
+    }
+
+    const project = await projectService.removeMember(req.params.id, memberId);
+
+    if (!project) {
+      return errorResponse(res, 404, "Project not found");
+    }
+
+    return successResponse(res, 200, "Member removed successfully", { project });
+
+  } catch (error) {
+    next(error);
   }
 }
