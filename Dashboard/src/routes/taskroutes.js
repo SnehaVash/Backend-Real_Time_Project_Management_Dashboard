@@ -1,4 +1,5 @@
 import express from "express";
+
 import {
   createTask,
   getTasks,
@@ -7,12 +8,15 @@ import {
   deleteTask
 } from "../controllers/taskcontroller.js";
 
+import { verifyToken } from "../middlewares/authMiddleware.js";
+import { isTaskCreator, isTaskAssigneeOrCreator } from "../middlewares/taskMiddleware.js";
+
 const router = express.Router();
 
-router.post("/", createTask);
-router.get("/", getTasks);
-router.get("/:id", getTaskById);
-router.put("/:id", updateTask);
-router.delete("/:id", deleteTask);
+router.post("/", verifyToken, createTask);
+router.get("/", verifyToken, getTasks);
+router.get("/:id", verifyToken, isTaskAssigneeOrCreator, getTaskById);
+router.put("/:id", verifyToken, isTaskAssigneeOrCreator, updateTask);
+router.delete("/:id", verifyToken, isTaskCreator, deleteTask);
 
 export default router;
