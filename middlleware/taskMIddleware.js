@@ -1,38 +1,47 @@
-import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
+import Task from "../models/task.model.js";
 
-export const verifyToken = async (req, res, next) => {
-  const header = req.headers.authorization;
-
-  if (!header) {
-    return res.status(401).json({ message: "No token provided" });
-  }
-
-  const parts = header.split(" ");
-
-  if (parts.length !== 2 || parts[0] !== "Bearer") {
-    return res.status(401).json({ message: "Invalid token format" });
-  }
-
-  const token = parts[1];
-
+export const isTaskCreator = async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const task = await Task.findById(req.params.id);
 
-    const user = await User.findById(decoded.id).select("-password");
-
-    if (!user) {
-      return res.status(401).json({ message: "User not found" });
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
     }
 
-    if (!user.isActive) {
-      return res.status(403).json({ message: "Account is deactivated" });
+    if (task.createdBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Access denied" });
     }
 
-    req.user = user;
+    req.task = task;
 
     next();
-  } catch (err) {
-    return res.status(401).json({ message: "Token is not valid" });
+  } catch {
+    return res.status(400).json({ message: "Invalid task id" });
+  }
+};
+
+export const isTaskAssigneeOrCreator = async (req, res, next) => {
+  try {
+    const task = await Task.findById(req.params.id);
+
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+
+    const isCreator = task.createdBy.toString() === req.user._id.toString();
+
+    const isAssignee =
+      task.assignedTo &&
+      task.assignedTo.toString() === req.user._id.toString();
+
+    if (!isCreator && !isAssignee) {
+      return res.status(403).json({ message: "Access denied" });
+    }
+
+    req.task = task;
+
+    next();
+  } catch {
+    return res.status(400).json({ message: "Invalid task id" });
   }
 };

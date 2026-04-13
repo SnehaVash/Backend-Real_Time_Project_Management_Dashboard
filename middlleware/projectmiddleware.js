@@ -1,10 +1,8 @@
 import Project from "../models/project.model.js";
 
 export const isProjectOwner = async (req, res, next) => {
-  const { id } = req.params;
-
   try {
-    const project = await Project.findById(id);
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
@@ -17,17 +15,14 @@ export const isProjectOwner = async (req, res, next) => {
     req.project = project;
 
     next();
-  } catch (error) {
+  } catch {
     return res.status(400).json({ message: "Invalid project id" });
   }
 };
 
-
 export const isProjectMemberOrOwner = async (req, res, next) => {
-  const { id } = req.params;
-
   try {
-    const project = await Project.findById(id);
+    const project = await Project.findById(req.params.id);
 
     if (!project) {
       return res.status(404).json({ message: "Project not found" });
@@ -46,7 +41,7 @@ export const isProjectMemberOrOwner = async (req, res, next) => {
     req.project = project;
 
     next();
-  } catch (error) {
+  } catch {
     return res.status(400).json({ message: "Invalid project id" });
   }
 };
