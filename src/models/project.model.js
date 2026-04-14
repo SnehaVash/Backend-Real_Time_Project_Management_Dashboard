@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const projectSchema = new mongoose.Schema({
     title: {type: String, required: true, trim: true },
     description: {type: String, required: true, trim: true },
-    status: {type: String, enum: ["active", "completed", "inactive"], default: "active"},
+    status: {type: String, enum: ["To-Do", "In Progress", "Done"], default: "To-Do"},
     startDate: Date,
     endDate: Date,
     createdBy: {type: mongoose.Schema.Types.ObjectId, ref: "User"},
