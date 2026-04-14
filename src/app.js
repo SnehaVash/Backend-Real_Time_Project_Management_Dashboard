@@ -11,7 +11,10 @@ import activityLogRoutes from "./routes/activityLogRoutes.js";
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: "httpp://127.0.0.1:5500"
+}));
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
