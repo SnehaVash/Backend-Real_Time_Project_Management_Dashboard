@@ -1,0 +1,114 @@
+Error Report – Frontend Integration Issues
+
+Project: Real-Time Project Management Dashboard
+
+Environment: Production (Vercel) + Backend (Render)
+
+
+
+1. Team Members Not Persisting
+
+Description:
+When a new team member is added, it appears correctly on the Team page. However, after navigating away and returning to the page, the newly added member disappears.
+
+Steps to Reproduce:
+
+1. Go to Team page
+2. Add a new member
+3. Navigate to another page
+4. Return to Team page
+
+**Expected Result:**
+Newly added member should persist.
+
+**Actual Result:**
+Member disappears.
+
+Possible Cause:
+
+* Data stored only in frontend (local state / localStorage)
+* Not being saved in backend database
+
+
+
+2. Deleted Member Reappears
+
+Description:
+When a team member is deleted, it is removed temporarily. However, after navigating away and returning, the deleted member reappears.
+
+**Steps to Reproduce:**
+
+1. Delete a team member
+2. Navigate to another page
+3. Return to Team page
+
+Expected Result:
+Deleted member should remain deleted.
+
+Actual Result:
+Member reappears.
+
+Possible Cause:
+
+* No DELETE API integration
+* Frontend not syncing with backend
+
+
+
+3. Tasks Not Visible After Creation
+
+Description:
+After creating tasks, they are not visible in the UI.
+
+**Steps to Reproduce:**
+
+1. Create a task
+2. Navigate to task/dashboard page
+
+**Expected Result:**
+Created task should be displayed.
+
+**Actual Result:**
+No tasks visible.
+
+Possible Cause:
+
+* Tasks not fetched from backend
+* API integration missing or incorrect
+* projectId mismatch
+
+
+
+4. Activity Panel Not Updating
+
+Description:
+User activity is not reflected in the live activity panel.
+
+Expected Result:
+Recent actions (task creation, updates, etc.) should appear.
+
+Actual Result:
+No activity shown.
+
+Possible Cause:**
+
+* Activity API not integrated
+* No real-time or polling mechanism
+
+
+
+5. Data Inconsistency Across Pages
+
+Description:
+Different pages show inconsistent data (e.g., Team Overview vs Team Page).
+
+**Example:
+
+* Overview shows different members than Team page
+
+Possible Cause:
+
+* Static/dummy data used in frontend
+* No centralized API data source
+
+Integration & Testing Team
