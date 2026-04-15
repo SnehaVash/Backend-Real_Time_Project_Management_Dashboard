@@ -31,7 +31,7 @@ export async function register(req, res, next) {
       return res.status(409).json({ message: "User already exists" });
     }
 
-    const allowedRoles = ["manager", "member"];
+    const allowedRoles = ["admin","manager", "member"];
 
     if (role && !allowedRoles.includes(role)) {
       return res.status(400).json({ message: "Invalid role!" });
